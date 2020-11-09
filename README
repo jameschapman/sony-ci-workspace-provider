@@ -1,0 +1,3 @@
+Ensure you build the updated terraform binary before pushing. Eventually this should go into github actions
+
+go build -o terraform-provider-example_${VERSION}
