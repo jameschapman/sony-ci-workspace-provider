@@ -1,7 +1,7 @@
 package main
 
 import (
-	"hello/provider"
+	"sonyciprovider/provider"
 
 	"github.com/hashicorp/terraform/plugin"
 )

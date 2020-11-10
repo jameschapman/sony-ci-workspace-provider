@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"strconv"
 )
 
 type TokenResponse struct {
@@ -48,6 +51,9 @@ func NewClient(url string, clientId string, clientSecret string, user string, pa
 }
 
 func (c *Client) GetToken() (string, error) {
+
+fmt.Println("Getting token")
+
 			creds := c.user + ":" + c.password
             encodedStr := base64.StdEncoding.EncodeToString([]byte(creds))
 
@@ -60,7 +66,8 @@ req.Header.Add("Authorization", "Basic " + encodedStr)
 resp, err := c.httpClient.Do(req)
 
   if err != nil {
-        panic(err)
+	  	fmt.Println(err)
+        return "", err
 	}	
 		
 	  body, err := ioutil.ReadAll(resp.Body)
@@ -70,7 +77,7 @@ resp, err := c.httpClient.Do(req)
     var t TokenResponse
     err = json.Unmarshal(body, &t)
     if err != nil {
-        panic(err)
+        return "", err
 	}
 
 return t.AccessToken, nil
@@ -79,24 +86,30 @@ return t.AccessToken, nil
 
 func (c *Client) Exists(id string) (bool, error) {
 		
-resp, err := c.httpRequest("GET", "/folders/" + id, bytes.Buffer{})
+log.Printf("Checking folder with id " + id + " exists")
+
+resp, err := c.httpRequest("/folders/" + id, "GET", bytes.Buffer{})
 
   if err != nil {
+	  log.Printf("Error when checking" + err.Error())
         return false, err
     }	
 	
-	// should try and improve this...
 	if(resp.StatusCode == 200)	{
+		log.Printf("Found folder")
 		return true, nil
 	}
 
+	log.Printf("Folder not found")
 	return false, nil
 
 }
 
 func (c *Client) Delete(id string) (bool, error) {
 
-_, err := c.httpRequest("DELETE", "/folders/" + id, bytes.Buffer{})
+fmt.Println("Deleting folder with id " + id)
+
+_, err := c.httpRequest("/folders/" + id, "DELETE", bytes.Buffer{})
 
   if err != nil {
         return false, err
@@ -107,9 +120,12 @@ return true, nil
 
 
 func (c *Client) Update(id string, name string) error {
+
+fmt.Println("Updating folder with id " + id)
+
  jsonStr := []byte(`{"name": "` + name + `"}`)
 
-_, err := c.httpRequest("PUT", "https://api.cimediacloud.com/folders", *bytes.NewBuffer(jsonStr))
+_, err := c.httpRequest("/folders", "PUT", *bytes.NewBuffer(jsonStr))
 
   if err != nil {
         return err
@@ -121,26 +137,29 @@ _, err := c.httpRequest("PUT", "https://api.cimediacloud.com/folders", *bytes.Ne
 
 func (c *Client) Get(id string) (*Folder, error) {
 		   
- resp, err := c.httpRequest("/folders" + id, "GET", bytes.Buffer{})
+fmt.Println("Getting folder with id " + id)
+
+ resp, err := c.httpRequest("/folders/" + id, "GET", bytes.Buffer{})
 
   if err != nil {
-        panic(err)
+        return nil, err
 	}
 	
 	if(resp.StatusCode == 404)	{
-		return nil, nil
+		return nil, errors.New("Not found")
 	}
 	
 	  body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         fmt.Println(err)
 	}
+
+	log.Printf("[INFO] Found resource JSON: " + string(body));
 	
-    fmt.Println((string(body)))
     var t *Folder
     err = json.Unmarshal(body, &t)
     if err != nil {
-        panic(err)
+        return nil, err
 	}
 
 	return t, nil
@@ -172,8 +191,11 @@ resp, err := c.httpRequest("/folders", "POST", *jsonByte)
 	return t.FolderId, nil
 }
 
-func (c *Client) httpRequest(path, method string, body bytes.Buffer) (response *http.Response, err error) {
-	req, err := http.NewRequest(method, c.requestPath(path), &body)
+func (c *Client) httpRequest(path string, method string, body bytes.Buffer) (response *http.Response, err error) {
+
+newPath:=c.requestPath(path)
+
+	req, err := http.NewRequest(method, newPath, &body)
 	if err != nil {
 		return nil, err
 	}
@@ -188,14 +210,23 @@ token, _:= c.GetToken()
 		req.Header.Add("Content-Type", "application/json")
 	}
 
+log.Printf("Making HTTP request to: %s",newPath)
+	
 	resp, err := c.httpClient.Do(req)
+
+log.Printf("Returned status code: " + strconv.Itoa(resp.StatusCode))
+
 	if err != nil {
 		return nil, err
 	}
 
+
+	
 	return resp, nil
 }
 
 func (c *Client) requestPath(path string) string {
-	return fmt.Sprintf("%s/%s", c.url, path)
+	newPath:= fmt.Sprintf("%s/%s", c.url, path)
+	fmt.Println("Generate path " + newPath)
+	return newPath
 }

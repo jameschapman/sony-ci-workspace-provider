@@ -1,7 +1,8 @@
 package provider
 
 import (
-	"hello/client"
+	"log"
+	"sonyciprovider/client"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -9,16 +10,15 @@ import (
 func resourceItem() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"parentId": {
+			"parent_id": {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "The id of the parent folder",
 			},
-			"id": {
+			"workspace_id": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "The id of the folder",
-				ForceNew:     true,
+				Description:  "The id of the workspace",
 			},
 			"name": {
 				Type:         schema.TypeString,
@@ -40,11 +40,13 @@ func resourceItem() *schema.Resource {
 
 func resourceCreateItem(d *schema.ResourceData, m interface{}) error {
 	
+	log.Printf("[INFO] Creating resource")
+
 apiClient := m.(*client.Client)
 
  name :=d.Get("name").(string)
- workspaceId :=d.Get("workspaceId").(string)
- parentFolderId :=d.Get("parentFolderId").(string)
+ workspaceId :=d.Get("workspace_id").(string)
+ parentFolderId :=d.Get("parent_id").(string)
 
 id, err:= apiClient.Create(workspaceId, parentFolderId, name)
 
@@ -59,21 +61,27 @@ return nil;
 
 func resourceReadItem(d *schema.ResourceData, m interface{}) error {
 
+	log.Printf("[INFO] Reading resource with id " + d.Id())
 apiClient := m.(*client.Client)
 item, err:= apiClient.Get(d.Id())
 
 if err != nil {
 	d.SetId("")
 	return nil
-} 
-
-		d.SetId(item.Id)
+} else {
+		log.Printf("[INFO] Found resource")
+		log.Printf("[INFO] Resource name: " + item.Name)
+	d.SetId(d.Id())
 	d.Set("name", item.Name)
-	d.Set("parentId", item.ParentId)
+	d.Set("parent_id", item.ParentId)
+	d.Set("workspace_id", d.Get("workspace_id").(string))
 	return nil
+}
 }
 
 func resourceUpdateItem(d *schema.ResourceData, m interface{}) error {
+
+	log.Printf("[INFO] Updating resource")
 
 apiClient := m.(*client.Client)
  name :=d.Get("name").(string)
@@ -89,6 +97,8 @@ if err != nil {
 func resourceDeleteItem(d *schema.ResourceData, m interface{}) error {
 apiClient := m.(*client.Client)
 
+log.Printf("[INFO] Deleting resource")
+
 
  id := d.Id()
 _, err:= apiClient.Delete(id)
@@ -103,6 +113,8 @@ d.SetId("")
 
 func resourceExistsItem(d *schema.ResourceData, m interface{}) (bool, error) {
 apiClient := m.(*client.Client)
+
+log.Printf("[INFO] Checking resource exists")
 
 	id := d.Id()
 
