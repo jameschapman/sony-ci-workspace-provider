@@ -65,7 +65,7 @@ go build -o terraform-provider-ci_1.0.0
 
 ```sh
 // Windows
-move terraform-provider-ci_1.0.0.exe %APPDATA%\terraform.d\plugins\umusic\[host]\ci\1.0.0\windows_amd64\terraform-provider-ci_1.0.0.exe
+move terraform-provider-ci_1.0.0.exe %APPDATA%\terraform.d\plugins\[host]\sony\ci\1.0.0\windows_amd64\terraform-provider-ci_1.0.0.exe
 
 // Windows
 cp terraform-provider-ci_1.0.0 ~/.terraform.d/plugins/[host]/sony/ci/1.0.0/linux_amd64/terraform-provider-ci_1.0.0
