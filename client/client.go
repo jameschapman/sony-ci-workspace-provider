@@ -22,6 +22,16 @@ type Folder struct {
 	ParentId string
 }
 
+type FolderItem struct {
+	Id string
+	Name string
+	IsTrashed bool
+}
+
+type FolderContent struct {
+	Items []FolderItem
+}
+
 type CreateFolderResponse struct {
 	FolderId string
 }
@@ -84,11 +94,11 @@ return t.AccessToken, nil
 
 }
 
-func (c *Client) Exists(id string) (bool, error) {
+func (c *Client) Exists(parentFolerId string, name string) (bool, error) {
 		
-log.Printf("Checking folder with id " + id + " exists")
+log.Printf("Checking folder with id " + name + " exists")
 
-resp, err := c.httpRequest("/folders/" + id, "GET", bytes.Buffer{})
+resp, err := c.httpRequest("/folders/" + parentFolerId + "/content?kind=folder&fields=name,isTrashed", "GET", bytes.Buffer{})
 
   if err != nil {
 	  log.Printf("Error when checking" + err.Error())
@@ -96,8 +106,28 @@ resp, err := c.httpRequest("/folders/" + id, "GET", bytes.Buffer{})
     }	
 	
 	if(resp.StatusCode == 200)	{
-		log.Printf("Found folder")
+
+ body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        fmt.Println(err)
+	}
+
+	log.Printf("[INFO] Found resource JSON: " + string(body));
+	
+    var t *FolderContent
+    err = json.Unmarshal(body, &t)
+    if err != nil {
+        return false, err
+	}
+
+for i := range t.Items {
+    if t.Items[i].Name == name && t.Items[i].IsTrashed == false {
+		log.Printf("Found folder with id: " + t.Items[i].Id)
 		return true, nil
+    }
+}
+		
+		return false, nil
 	}
 
 	log.Printf("Folder not found")

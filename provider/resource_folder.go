@@ -116,9 +116,10 @@ apiClient := m.(*client.Client)
 
 log.Printf("[INFO] Checking resource exists")
 
-	id := d.Id()
+	name :=d.Get("name").(string)
+ parentFolderId :=d.Get("parent_id").(string)
 
-	res, err := apiClient.Exists(id)
+	res, err := apiClient.Exists(parentFolderId, name)
 
 	if err != nil {
 			return false, err
