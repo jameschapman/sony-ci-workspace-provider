@@ -94,11 +94,11 @@ return t.AccessToken, nil
 
 }
 
-func (c *Client) Exists(parentFolerId string, name string) (bool, error) {
+func (c *Client) Exists(parentFolderId string, name string) (bool, error) {
 		
-log.Printf("Checking folder with id " + name + " exists")
+log.Printf("Checking folder " + name + " exists in parent folder " + parentFolderId)
 
-resp, err := c.httpRequest("/folders/" + parentFolerId + "/content?kind=folder&fields=name,isTrashed", "GET", bytes.Buffer{})
+resp, err := c.httpRequest("/folders/" + parentFolderId + "/contents?kind=folder&fields=name,isTrashed", "GET", bytes.Buffer{})
 
   if err != nil {
 	  log.Printf("Error when checking" + err.Error())
@@ -128,9 +128,9 @@ for i := range t.Items {
 }
 		
 		return false, nil
-	}
+}
 
-	log.Printf("Folder not found")
+	log.Printf("Folder " + name + " not found in parent folder " + parentFolderId)
 	return false, nil
 
 }
